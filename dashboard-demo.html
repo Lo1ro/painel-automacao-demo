@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo — Painel de Automação (Demo)</title>
+<meta name="description" content="Demo de painel de controle para automações de IA / n8n. Por João Vitor Rizzieri.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#070a0f;--bg2:#0b1019;--panel:#0e141d;--line:#18222f;--line2:#243343;--ink:#eef4fb;--mut:#9fb0c2;--faint:#67788b;
+    --acc:#34d6e6;--acc2:#7af0fb;--green:#3fe08a;--amber:#f6b53b;--red:#ff6b6b;--acc-dim:rgba(52,214,230,.12);
+    --disp:'Sora',sans-serif;--body:'Manrope',sans-serif;--mono:'JetBrains Mono',monospace;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh;}
+  /* sidebar */
+  .side{background:var(--bg2);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;}
+  .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 20px;}
+  .brand .mk{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#1d8fa0);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;color:#04181b;}
+  .brand b{font-family:var(--disp);font-weight:800;font-size:17px;letter-spacing:-.01em;}
+  .brand .sub{font-family:var(--mono);font-size:10px;color:var(--faint);}
+  .nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;color:var(--mut);font-weight:500;font-size:14px;transition:.15s;}
+  .nav a .i{width:17px;text-align:center;opacity:.85;}
+  .nav a:hover{background:var(--panel);color:var(--ink);}
+  .nav a.on{background:var(--acc-dim);color:var(--acc);}
+  .side .foot{margin-top:auto;font-family:var(--mono);font-size:11px;color:var(--faint);padding:10px 8px;border-top:1px solid var(--line);}
+  .side .foot b{color:var(--green);}
+  /* main */
+  .main{padding:26px 30px 40px;}
+  @media(max-width:860px){.app{grid-template-columns:1fr;}.side{display:none;}}
+  .top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:26px;}
+  .top h1{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:-.02em;}
+  .top .crumb{font-family:var(--mono);font-size:12px;color:var(--faint);}
+  .status-pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:7px 14px;}
+  .status-pill i{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green);animation:bl 1.8s infinite;}
+  @keyframes bl{50%{opacity:.4;}}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;}
+  @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .kpi .lab{font-family:var(--mono);font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;}
+  .kpi .v{font-family:var(--disp);font-weight:800;font-size:30px;margin:8px 0 4px;letter-spacing:-.02em;}
+  .kpi .d{font-size:12.5px;font-weight:600;}
+  .kpi .d.up{color:var(--green);}.kpi .d.dn{color:var(--red);}
+  .row{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;margin-bottom:20px;}
+  @media(max-width:1000px){.row{grid-template-columns:1fr;}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;}
+  .card .ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .card .ch h3{font-family:var(--disp);font-weight:700;font-size:16px;}
+  .card .ch .tag{font-family:var(--mono);font-size:11px;color:var(--faint);}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:500;padding:0 8px 12px;border-bottom:1px solid var(--line);}
+  td{padding:13px 8px;border-bottom:1px solid var(--line);font-size:14px;}
+  tr:last-child td{border-bottom:0;}
+  td .flow{font-weight:600;}
+  td .trig{font-family:var(--mono);font-size:12px;color:var(--mut);}
+  .badge{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:6px;font-weight:500;}
+  .badge.ok{color:var(--green);background:rgba(63,224,138,.12);}
+  .badge.err{color:var(--red);background:rgba(255,107,107,.12);}
+  .badge.run{color:var(--acc);background:var(--acc-dim);}
+  .flows li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);list-style:none;font-size:14px;}
+  .flows li:last-child{border-bottom:0;}
+  .flows .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .flows .nm{flex:1;font-weight:500;}
+  .flows .meta{font-family:var(--mono);font-size:12px;color:var(--faint);}
+  .demo-tag{position:fixed;left:16px;bottom:14px;font-family:var(--mono);font-size:11px;color:var(--faint);background:rgba(10,12,16,.7);border:1px solid var(--line);padding:6px 11px;border-radius:8px;}
+  .demo-tag a{color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mk">F</div><div><b>Fluxo</b><div class="sub">CONTROL PANEL</div></div></div>
+    <nav class="nav">
+      <a class="on" href="#"><span class="i">◧</span> Visão geral</a>
+      <a href="#"><span class="i">⤳</span> Fluxos</a>
+      <a href="#"><span class="i">▤</span> Execuções</a>
+      <a href="#"><span class="i">◴</span> Agendamentos</a>
+      <a href="#"><span class="i">≣</span> Logs</a>
+      <a href="#"><span class="i">⚙</span> Configurações</a>
+    </nav>
+    <div class="foot">SISTEMA: <b>ONLINE</b><br>v2.4.1 · uptime 99.98%</div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><div class="crumb">// painel / visão geral</div><h1>Visão geral</h1></div>
+      <span class="status-pill"><i></i> Todos os fluxos operacionais</span>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="lab">Execuções hoje</div><div class="v">1.248</div><div class="d up">▲ 12,4% vs ontem</div></div>
+      <div class="kpi"><div class="lab">Taxa de sucesso</div><div class="v">98,7%</div><div class="d up">▲ 0,6 pp</div></div>
+      <div class="kpi"><div class="lab">Tempo economizado</div><div class="v">42h</div><div class="d up">por semana</div></div>
+      <div class="kpi"><div class="lab">Fluxos ativos</div><div class="v">16</div><div class="d dn">2 em manutenção</div></div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="ch"><h3>Execuções — últimos 14 dias</h3><span class="tag">sucesso vs erro</span></div>
+        <canvas id="chLine" height="120"></canvas>
+      </div>
+      <div class="card">
+        <div class="ch"><h3>Distribuição</h3><span class="tag">por status</span></div>
+        <canvas id="chDonut" height="120"></canvas>
+      </div>
+    </div>
+
+    <div class="row" style="grid-template-columns:1.7fr 1fr;">
+      <div class="card">
+        <div class="ch"><h3>Execuções recentes</h3><span class="tag">tempo real</span></div>
+        <table>
+          <thead><tr><th>Fluxo</th><th>Gatilho</th><th>Status</th><th>Duração</th><th>Horário</th></tr></thead>
+          <tbody>
+            <tr><td><div class="flow">Atendente WhatsApp</div><div class="trig">novo lead</div></td><td class="trig">webhook</td><td><span class="badge ok">sucesso</span></td><td class="trig">1,2s</td><td class="trig">14:38</td></tr>
+            <tr><td><div class="flow">Triagem de e-mail</div><div class="trig">IMAP</div></td><td class="trig">agendado</td><td><span class="badge ok">sucesso</span></td><td class="trig">3,8s</td><td class="trig">14:35</td></tr>
+            <tr><td><div class="flow">NF → planilha</div><div class="trig">OCR/IA</div></td><td class="trig">e-mail</td><td><span class="badge run">rodando</span></td><td class="trig">—</td><td class="trig">14:34</td></tr>
+            <tr><td><div class="flow">Sync CRM</div><div class="trig">HubSpot</div></td><td class="trig">webhook</td><td><span class="badge err">erro 429</span></td><td class="trig">0,4s</td><td class="trig">14:31</td></tr>
+            <tr><td><div class="flow">Backup Drive</div><div class="trig">cron</div></td><td class="trig">agendado</td><td><span class="badge ok">sucesso</span></td><td class="trig">12,1s</td><td class="trig">14:00</td></tr>
+            <tr><td><div class="flow">Resposta Instagram</div><div class="trig">DM</div></td><td class="trig">webhook</td><td><span class="badge ok">sucesso</span></td><td class="trig">0,9s</td><td class="trig">13:57</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="ch"><h3>Fluxos ativos</h3><span class="tag">16</span></div>
+        <ul class="flows">
+          <li><span class="dot" style="background:var(--green)"></span><span class="nm">Atendente WhatsApp</span><span class="meta">312/dia</span></li>
+          <li><span class="dot" style="background:var(--green)"></span><span class="nm">Triagem de e-mail</span><span class="meta">88/dia</span></li>
+          <li><span class="dot" style="background:var(--green)"></span><span class="nm">NF → planilha (Itaú)</span><span class="meta">41/dia</span></li>
+          <li><span class="dot" style="background:var(--amber)"></span><span class="nm">Sync CRM</span><span class="meta">instável</span></li>
+          <li><span class="dot" style="background:var(--green)"></span><span class="nm">Secretária Instagram</span><span class="meta">126/dia</span></li>
+          <li><span class="dot" style="background:var(--faint)"></span><span class="nm">Relatório semanal</span><span class="meta">pausado</span></li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="demo-tag">Demo de portfólio · <a href="https://github.com/Lo1ro" target="_blank">João Vitor Rizzieri</a></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  const css=getComputedStyle(document.documentElement);
+  const acc=css.getPropertyValue('--acc').trim(), green=css.getPropertyValue('--green').trim(), red=css.getPropertyValue('--red').trim(), line=css.getPropertyValue('--line').trim(), mut=css.getPropertyValue('--mut').trim();
+  const days=Array.from({length:14},(_,i)=>{const d=new Date();d.getDate;d.setDate(d.getDate()-(13-i));return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});});
+  const ok=[820,910,870,1040,990,1130,1080,1210,1160,1240,1190,1300,1270,1232];
+  const er=[14,9,22,11,8,17,13,10,19,7,12,9,15,16];
+  if(window.Chart){
+    Chart.defaults.font.family="'Manrope',sans-serif";Chart.defaults.color=mut;
+    new Chart(document.getElementById('chLine'),{type:'line',
+      data:{labels:days,datasets:[
+        {label:'Sucesso',data:ok,borderColor:acc,backgroundColor:'rgba(52,214,230,.12)',fill:true,tension:.4,borderWidth:2,pointRadius:0,pointHoverRadius:4},
+        {label:'Erro',data:er,borderColor:red,backgroundColor:'transparent',tension:.4,borderWidth:2,pointRadius:0,pointHoverRadius:4}]},
+      options:{responsive:true,plugins:{legend:{labels:{boxWidth:12,usePointStyle:true,pointStyle:'circle'}}},
+        scales:{x:{grid:{color:line},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:7}},y:{grid:{color:line},beginAtZero:true}}}});
+    new Chart(document.getElementById('chDonut'),{type:'doughnut',
+      data:{labels:['Sucesso','Erro','Reprocessado'],datasets:[{data:[1232,16,34],backgroundColor:[acc,red,green],borderColor:'#0e141d',borderWidth:3}]},
+      options:{cutout:'68%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,usePointStyle:true,pointStyle:'circle',padding:16}}}}});
+  }
+</script>
+</body>
+</html>
